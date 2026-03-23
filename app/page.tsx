@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card"
 import { Copy, Check, Moon, Sun, Globe } from "lucide-react"
 
 type QuoteType = "single" | "double"
+type SeparatorType = "space" | "newline"
 type Language = "en" | "pt"
 
 const translations = {
@@ -16,12 +17,16 @@ const translations = {
     title: "SQL Quote Formatter",
     subtitle: "Format your IDs for SQL IN clauses",
     inputLabel: "Input",
-    inputPlaceholder: "Paste your IDs here...\nSupports line breaks or comma-separated values",
+    inputPlaceholder:
+      "Paste your IDs here...\nSupports line breaks or comma-separated values",
     outputLabel: "Output",
     outputPlaceholder: "Your formatted output will appear here...",
     quoteType: "Quote Type",
+    separatorType: "Separator",
     singleQuotes: "Single Quotes",
     doubleQuotes: "Double Quotes",
+    spaceSeparator: "Space",
+    newlineSeparator: "Line Break",
     format: "Format",
     clear: "Clear",
     copy: "Copy",
@@ -32,20 +37,25 @@ const translations = {
     howToUse: "How to use",
     step1: "Paste your IDs (one per line or comma-separated)",
     step2: "Choose between single or double quotes",
-    step3: "Click Format to generate SQL IN clause format",
-    step4: "Copy the output and use in your SQL queries",
+    step3: "Choose whether the output should use spaces or line breaks",
+    step4: "Click Format to generate SQL IN clause format",
+    step5: "Copy the output and use in your SQL queries",
     footerText: "Built for developers who work with SQL queries",
   },
   pt: {
     title: "Formatador SQL de Aspas",
     subtitle: "Formate seus IDs para cláusulas SQL IN",
     inputLabel: "Entrada",
-    inputPlaceholder: "Cole seus IDs aqui...\nSuporta quebras de linha ou valores separados por vírgula",
+    inputPlaceholder:
+      "Cole seus IDs aqui...\nSuporta quebras de linha ou valores separados por vírgula",
     outputLabel: "Saída",
     outputPlaceholder: "Sua saída formatada aparecerá aqui...",
     quoteType: "Tipo de Aspas",
+    separatorType: "Separador",
     singleQuotes: "Aspas Simples",
     doubleQuotes: "Aspas Duplas",
+    spaceSeparator: "Espaço",
+    newlineSeparator: "Quebra de Linha",
     format: "Formatar",
     clear: "Limpar",
     copy: "Copiar",
@@ -56,8 +66,9 @@ const translations = {
     howToUse: "Como usar",
     step1: "Cole seus IDs (um por linha ou separados por vírgula)",
     step2: "Escolha entre aspas simples ou duplas",
-    step3: "Clique em Formatar para gerar formato de cláusula SQL IN",
-    step4: "Copie a saída e use em suas consultas SQL",
+    step3: "Escolha se a saída deve usar espaços ou quebras de linha",
+    step4: "Clique em Formatar para gerar formato de cláusula SQL IN",
+    step5: "Copie a saída e use em suas consultas SQL",
     footerText: "Criado para desenvolvedores que trabalham com consultas SQL",
   },
 }
@@ -66,6 +77,8 @@ export default function StringFormatter() {
   const [input, setInput] = useState("")
   const [output, setOutput] = useState("")
   const [quoteType, setQuoteType] = useState<QuoteType>("single")
+  const [separatorType, setSeparatorType] =
+    useState<SeparatorType>("newline")
   const [copied, setCopied] = useState(false)
   const [theme, setTheme] = useState<"light" | "dark">("light")
   const [language, setLanguage] = useState<Language>("en")
@@ -107,14 +120,17 @@ export default function StringFormatter() {
       return
     }
 
-    // Split by newlines first, then by commas, and filter out empty strings
+    // Split by newlines first, then by commas, and filter out empty strings.
     const items = input
       .split(/[\n,]/)
       .map((item) => item.trim())
       .filter((item) => item.length > 0)
 
     const quote = quoteType === "single" ? "'" : '"'
-    const formatted = items.map((item) => `${quote}${item}${quote}`).join(",")
+    const itemSeparator = separatorType === "space" ? ", " : ",\n"
+    const formatted = items
+      .map((item) => `${quote}${item}${quote}`)
+      .join(itemSeparator)
 
     setOutput(formatted)
     setItemCount(items.length)
@@ -147,14 +163,18 @@ export default function StringFormatter() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground">{t.title}</h1>
-              <p className="text-sm text-muted-foreground mt-1">{t.subtitle}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t.subtitle}</p>
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggleLanguage}
-                title={language === "en" ? "Switch to Portuguese" : "Mudar para Inglês"}
+                title={
+                  language === "en"
+                    ? "Switch to Portuguese"
+                    : "Mudar para Inglês"
+                }
               >
                 <Globe className="h-5 w-5" />
               </Button>
@@ -164,7 +184,11 @@ export default function StringFormatter() {
                 onClick={toggleTheme}
                 title={theme === "light" ? "Dark Mode" : "Light Mode"}
               >
-                {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                {theme === "light" ? (
+                  <Moon className="h-5 w-5" />
+                ) : (
+                  <Sun className="h-5 w-5" />
+                )}
               </Button>
             </div>
           </div>
@@ -173,12 +197,14 @@ export default function StringFormatter() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="mx-auto max-w-6xl">
           {/* Controls */}
-          <Card className="p-6 mb-6">
-            <div className="flex flex-col md:flex-row md:items-end gap-6">
+          <Card className="mb-6 p-6">
+            <div className="flex flex-col gap-6 md:flex-row md:items-end">
               <div className="flex-1">
-                <Label className="text-sm font-medium mb-3 block">{t.quoteType}</Label>
+                <Label className="mb-3 block text-sm font-medium">
+                  {t.quoteType}
+                </Label>
                 <RadioGroup
                   value={quoteType}
                   onValueChange={(value) => setQuoteType(value as QuoteType)}
@@ -186,20 +212,60 @@ export default function StringFormatter() {
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="single" id="single" />
-                    <Label htmlFor="single" className="cursor-pointer font-normal">
+                    <Label
+                      htmlFor="single"
+                      className="cursor-pointer font-normal"
+                    >
                       {t.singleQuotes} (<span className="font-mono">'</span>)
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="double" id="double" />
-                    <Label htmlFor="double" className="cursor-pointer font-normal">
+                    <Label
+                      htmlFor="double"
+                      className="cursor-pointer font-normal"
+                    >
                       {t.doubleQuotes} (<span className="font-mono">"</span>)
                     </Label>
                   </div>
                 </RadioGroup>
               </div>
+
+              <div className="flex-1">
+                <Label className="mb-3 block text-sm font-medium">
+                  {t.separatorType}
+                </Label>
+                <RadioGroup
+                  value={separatorType}
+                  onValueChange={(value) =>
+                    setSeparatorType(value as SeparatorType)
+                  }
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="space" id="space" />
+                    <Label htmlFor="space" className="cursor-pointer font-normal">
+                      {t.spaceSeparator}
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="newline" id="newline" />
+                    <Label
+                      htmlFor="newline"
+                      className="cursor-pointer font-normal"
+                    >
+                      {t.newlineSeparator}
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
               <div className="flex gap-2">
-                <Button onClick={formatStrings} size="lg" className="min-w-[120px]">
+                <Button
+                  onClick={formatStrings}
+                  size="lg"
+                  className="min-w-[120px]"
+                >
                   {t.format}
                 </Button>
                 <Button onClick={clearAll} variant="outline" size="lg">
@@ -210,10 +276,10 @@ export default function StringFormatter() {
           </Card>
 
           {/* Input/Output Grid */}
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid gap-6 md:grid-cols-2">
             {/* Input */}
             <Card className="p-6">
-              <Label htmlFor="input" className="text-sm font-medium mb-2 block">
+              <Label htmlFor="input" className="mb-2 block text-sm font-medium">
                 {t.inputLabel}
               </Label>
               <Textarea
@@ -221,11 +287,11 @@ export default function StringFormatter() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={t.inputPlaceholder}
-                className="min-h-[400px] font-mono text-sm resize-none"
+                className="min-h-[400px] resize-none font-mono text-sm"
               />
               <div className="mt-3 text-xs text-muted-foreground">
-                <p className="font-semibold mb-1">{t.example}:</p>
-                <code className="block bg-muted p-2 rounded">
+                <p className="mb-1 font-semibold">{t.example}:</p>
+                <code className="block rounded bg-muted p-2">
                   589c16c8-cec0-4fc5-b936-9edaff07e923
                   <br />
                   589c16c8-cec0-4fc5-b936-9edaff07e924
@@ -237,12 +303,17 @@ export default function StringFormatter() {
 
             {/* Output */}
             <Card className="p-6">
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <Label htmlFor="output" className="text-sm font-medium">
                   {t.outputLabel}
                 </Label>
                 {output && (
-                  <Button variant="ghost" size="sm" onClick={copyToClipboard} className="gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={copyToClipboard}
+                    className="gap-2"
+                  >
                     {copied ? (
                       <>
                         <Check className="h-4 w-4" />
@@ -262,32 +333,36 @@ export default function StringFormatter() {
                 value={output}
                 readOnly
                 placeholder={t.outputPlaceholder}
-                className="min-h-[400px] font-mono text-sm resize-none bg-muted/50"
+                className="min-h-[400px] resize-none bg-muted/50 font-mono text-sm"
               />
               {itemCount > 0 && (
                 <div className="mt-3 text-xs text-muted-foreground">
-                  <span className="font-semibold">{itemCount}</span> {t.itemsCount}
+                  <span className="font-semibold">{itemCount}</span>{" "}
+                  {t.itemsCount}
                 </div>
               )}
             </Card>
           </div>
 
           {/* Usage Info */}
-          <Card className="p-6 mt-6 bg-muted/50">
-            <h3 className="font-semibold mb-2 text-sm">{t.howToUse}:</h3>
-            <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+          <Card className="mt-6 bg-muted/50 p-6">
+            <h3 className="mb-2 text-sm font-semibold">{t.howToUse}:</h3>
+            <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
               <li>{t.step1}</li>
               <li>{t.step2}</li>
               <li>{t.step3}</li>
               <li>{t.step4}</li>
+              <li>{t.step5}</li>
             </ul>
           </Card>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border mt-12 py-6">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">{t.footerText}</div>
+      <footer className="mt-12 border-t border-border py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          {t.footerText}
+        </div>
       </footer>
     </div>
   )
